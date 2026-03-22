@@ -142,34 +142,32 @@ jobs:
         VERSION="${{ steps.get_info.outputs.version }}"
         BUILD_TIME=$(date '+%Y-%m-%d %H:%M:%S')
         
-        cat > "${{ env.OUTPUT_DIR }}/README.txt" << EOF
-=====================================
-有爱插件 Mac 更新器 - 自动打包版本
-=====================================
-
-📦 版本号：$VERSION
-🕐 打包时间：$BUILD_TIME (UTC)
-🖥️ 打包环境：GitHub Actions (Windows)
-
-📁 内容说明:
-- Interface/AddOns/: 包含所有有爱插件文件
-- 适用于魔兽世界正式服 (_retail_) 和怀旧服 (_classic_)
-
-📝 使用说明:
-1. 将 Interface文件夹复制到你的魔兽安装目录
-2. 路径示例：/Applications/World of Warcraft/_retail_/Interface/
-
-⚠️ 注意事项:
-- 本版本由 GitHub Actions 自动打包
-- 每周一定时更新
-- 文件来源：网易有爱官网
-
-🔗 相关链接:
-- 官网：https://dd.163.com
-- GitHub: https://github.com/YOUR_USERNAME/youai_updater
-
-=====================================
-EOF
+        echo "=====================================" > "${{ env.OUTPUT_DIR }}/README.txt"
+        echo "有爱插件 Mac 更新器 - 自动打包版本" >> "${{ env.OUTPUT_DIR }}/README.txt"
+        echo "=====================================" >> "${{ env.OUTPUT_DIR }}/README.txt"
+        echo "" >> "${{ env.OUTPUT_DIR }}/README.txt"
+        echo "📦 版本号：$VERSION" >> "${{ env.OUTPUT_DIR }}/README.txt"
+        echo "🕐 打包时间：$BUILD_TIME (UTC)" >> "${{ env.OUTPUT_DIR }}/README.txt"
+        echo "🖥️ 打包环境：GitHub Actions (Windows)" >> "${{ env.OUTPUT_DIR }}/README.txt"
+        echo "" >> "${{ env.OUTPUT_DIR }}/README.txt"
+        echo "📁 内容说明:" >> "${{ env.OUTPUT_DIR }}/README.txt"
+        echo "- Interface/AddOns/: 包含所有有爱插件文件" >> "${{ env.OUTPUT_DIR }}/README.txt"
+        echo "- 适用于魔兽世界正式服 (_retail_) 和怀旧服 (_classic_)" >> "${{ env.OUTPUT_DIR }}/README.txt"
+        echo "" >> "${{ env.OUTPUT_DIR }}/README.txt"
+        echo "📝 使用说明:" >> "${{ env.OUTPUT_DIR }}/README.txt"
+        echo "1. 将 Interface文件夹复制到你的魔兽安装目录" >> "${{ env.OUTPUT_DIR }}/README.txt"
+        echo "2. 路径示例：/Applications/World of Warcraft/_retail_/Interface/" >> "${{ env.OUTPUT_DIR }}/README.txt"
+        echo "" >> "${{ env.OUTPUT_DIR }}/README.txt"
+        echo "⚠️ 注意事项:" >> "${{ env.OUTPUT_DIR }}/README.txt"
+        echo "- 本版本由 GitHub Actions 自动打包" >> "${{ env.OUTPUT_DIR }}/README.txt"
+        echo "- 每周一定时更新" >> "${{ env.OUTPUT_DIR }}/README.txt"
+        echo "- 文件来源：网易有爱官网" >> "${{ env.OUTPUT_DIR }}/README.txt"
+        echo "" >> "${{ env.OUTPUT_DIR }}/README.txt"
+        echo "🔗 相关链接:" >> "${{ env.OUTPUT_DIR }}/README.txt"
+        echo "- 官网：https://dd.163.com" >> "${{ env.OUTPUT_DIR }}/README.txt"
+        echo "- GitHub: https://github.com/codejorker/youai_updater_mac" >> "${{ env.OUTPUT_DIR }}/README.txt"
+        echo "" >> "${{ env.OUTPUT_DIR }}/README.txt"
+        echo "=====================================" >> "${{ env.OUTPUT_DIR }}/README.txt"
         echo "✅ 生成版本说明"
         
     - name: 🗜️ 压缩输出文件
