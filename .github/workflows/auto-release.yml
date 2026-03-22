@@ -1,0 +1,258 @@
+name: 🎁 有爱插件自动打包
+
+on:
+  schedule:
+    # 每周一上午 10:00 (UTC+8) 执行
+    - cron: '0 2 * * 1'
+  
+  # 允许手动触发
+  workflow_dispatch:
+    inputs:
+      force_update:
+        description: '强制更新（即使版本相同）'
+        required: false
+        default: 'false'
+
+env:
+  PLUGIN_NAME: youai-plugin
+  CACHE_DIR: ./cache
+  OUTPUT_DIR: ./output
+
+jobs:
+  check-and-package:
+    runs-on: windows-latest
+    
+    steps:
+    - name: 📦 检出仓库
+      uses: actions/checkout@v4
+      
+    - name: 🐍 设置 Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        
+    - name: 📥 安装依赖
+      run: |
+        python -m pip install --upgrade pip
+        pip install requests beautifulsoup4
+        
+    - name: 📂 创建目录
+      run: |
+        mkdir -p ${{ env.CACHE_DIR }}
+        mkdir -p ${{ env.OUTPUT_DIR }}
+        
+    - name: 🔍 检测最新版本
+      id: version_check
+      shell: bash
+      run: |
+        echo "🔍 正在检测最新版本..."
+        python scripts/check_version.py
+      continue-on-error: true
+      
+    - name: 📊 获取版本信息
+      id: get_info
+      shell: bash
+      run: |
+        # 从缓存文件读取版本信息
+        if [ -f "${{ env.CACHE_DIR }}/version_info.txt" ]; then
+          VERSION=$(cat ${{ env.CACHE_DIR }}/version_info.txt | head -1)
+          DOWNLOAD_URL=$(cat ${{ env.CACHE_DIR }}/version_info.txt | tail -1)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "download_url=$DOWNLOAD_URL" >> $GITHUB_OUTPUT
+          echo "✅ 检测到版本：$VERSION"
+        else
+          echo "❌ 未获取到版本信息，使用默认策略"
+          # 使用时间戳作为版本号
+          VERSION="weekly-$(date +%Y%m%d)"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "download_url=" >> $GITHUB_OUTPUT
+        fi
+        
+    - name: 💾 恢复缓存
+      uses: actions/cache@v4
+      with:
+        path: ${{ env.CACHE_DIR }}
+        key: youai-plugin-${{ steps.get_info.outputs.version }}
+        restore-keys: |
+          youai-plugin-
+          
+    - name: ⬇️ 下载有爱插件
+      id: download
+      shell: bash
+      run: |
+        DOWNLOAD_URL="${{ steps.get_info.outputs.download_url }}"
+        
+        if [ -n "$DOWNLOAD_URL" ]; then
+          echo "📥 正在下载：$DOWNLOAD_URL"
+          curl -L -o "${{ env.CACHE_DIR }}/YouAiSetup.exe" "$DOWNLOAD_URL"
+          echo "✅ 下载完成"
+          echo "downloaded=true" >> $GITHUB_OUTPUT
+        else
+          echo "⚠️ 无下载地址，跳过下载步骤"
+          echo "downloaded=false" >> $GITHUB_OUTPUT
+        fi
+        
+    - name: 📦 解压安装包
+      if: steps.download.outputs.downloaded == 'true'
+      shell: bash
+      run: |
+        echo "📦 正在解压安装包..."
+        
+        # 使用 7z 解压（Windows 环境自带）
+        if command -v 7z &> /dev/null; then
+          7z x "${{ env.CACHE_DIR }}/YouAiSetup.exe" -o"${{ env.CACHE_DIR }}/extracted" -y
+          echo "✅ 解压完成"
+        else
+          echo "❌ 未找到 7z 工具"
+          exit 1
+        fi
+        
+    - name: 🔍 提取 Interface文件夹
+      if: steps.download.outputs.downloaded == 'true'
+      shell: bash
+      run: |
+        echo "🔍 正在查找 Interface文件夹..."
+        
+        # 递归查找 Interface文件夹
+        INTERFACE_PATH=$(find "${{ env.CACHE_DIR }}/extracted" -type d -name "Interface" | head -1)
+        
+        if [ -n "$INTERFACE_PATH" ]; then
+          echo "✅ 找到 Interface文件夹：$INTERFACE_PATH"
+          
+          # 复制 Interface文件夹
+          cp -r "$INTERFACE_PATH" "${{ env.OUTPUT_DIR }}/Interface"
+          
+          # 验证是否包含 AddOns
+          if [ -d "${{ env.OUTPUT_DIR }}/Interface/AddOns" ]; then
+            echo "✅ 成功提取 Interface/AddOns"
+            ls -la "${{ env.OUTPUT_DIR }}/Interface/AddOns" || true
+          else
+            echo "⚠️ 未找到 AddOns 文件夹"
+            ls -la "${{ env.OUTPUT_DIR }}/Interface" || true
+          fi
+        else
+          echo "❌ 未找到 Interface文件夹"
+          echo "查找所有文件夹："
+          find "${{ env.CACHE_DIR }}/extracted" -type d || true
+        fi
+        
+    - name: 📄 生成版本说明
+      shell: bash
+      run: |
+        VERSION="${{ steps.get_info.outputs.version }}"
+        BUILD_TIME=$(date '+%Y-%m-%d %H:%M:%S')
+        
+        cat > "${{ env.OUTPUT_DIR }}/README.txt" << EOF
+=====================================
+有爱插件 Mac 更新器 - 自动打包版本
+=====================================
+
+📦 版本号：$VERSION
+🕐 打包时间：$BUILD_TIME (UTC)
+🖥️ 打包环境：GitHub Actions (Windows)
+
+📁 内容说明:
+- Interface/AddOns/: 包含所有有爱插件文件
+- 适用于魔兽世界正式服 (_retail_) 和怀旧服 (_classic_)
+
+📝 使用说明:
+1. 将 Interface文件夹复制到你的魔兽安装目录
+2. 路径示例：/Applications/World of Warcraft/_retail_/Interface/
+
+⚠️ 注意事项:
+- 本版本由 GitHub Actions 自动打包
+- 每周一定时更新
+- 文件来源：网易有爱官网
+
+🔗 相关链接:
+- 官网：https://dd.163.com
+- GitHub: https://github.com/YOUR_USERNAME/youai_updater
+
+=====================================
+EOF
+        echo "✅ 生成版本说明"
+        
+    - name: 🗜️ 压缩输出文件
+      shell: bash
+      run: |
+        cd "${{ env.OUTPUT_DIR }}"
+        VERSION="${{ steps.get_info.outputs.version }}"
+        zip -r "../youai-plugin-${VERSION}.zip" ./*
+        echo "✅ 压缩完成：youai-plugin-${VERSION}.zip"
+        ls -lh ../youai-plugin-${VERSION}.zip
+        
+    - name: 🔐 计算 SHA256
+      shell: bash
+      run: |
+        cd "${{ github.workspace }}"
+        FILE=$(ls youai-plugin-*.zip | head -1)
+        if [ -n "$FILE" ]; then
+          sha256sum "$FILE" > "${{ env.OUTPUT_DIR }}/SHA256SUMS.txt"
+          echo "✅ SHA256: $(cat ${OUTPUT_DIR}/SHA256SUMS.txt)"
+        fi
+        
+    - name: 📤 发布到 GitHub Releases
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          ${{ env.OUTPUT_DIR }}/youai-plugin-*.zip
+          ${{ env.OUTPUT_DIR }}/README.txt
+          ${{ env.OUTPUT_DIR }}/SHA256SUMS.txt
+        tag_name: plugin-${{ steps.get_info.outputs.version }}
+        name: "有爱插件 v${{ steps.get_info.outputs.version }}"
+        body: |
+          ## 📦 有爱插件自动打包版本
+          
+          ### ℹ️ 版本信息
+          - **版本号**: ${{ steps.get_info.outputs.version }}
+          - **打包时间**: $(date '+%Y-%m-%d %H:%M:%S') (UTC)
+          - **文件大小**: $(ls -lh youai-plugin-*.zip | awk '{print $5}')
+          
+          ### 📝 更新说明
+          本周期的自动打包版本，包含最新的有爱插件。
+          
+          ### 📋 文件列表
+          - `youai-plugin-${{ steps.get_info.outputs.version }}.zip` - 插件压缩包
+          - `README.txt` - 使用说明
+          - `SHA256SUMS.txt` - 文件校验
+          
+          ### 🔧 安装方法
+          1. 下载 `youai-plugin-${{ steps.get_info.outputs.version }}.zip`
+          2. 解压到任意目录
+          3. 将 `Interface` 文件夹复制到魔兽安装目录
+          
+          ### ⚠️ 注意事项
+          - 本版本由 GitHub Actions 自动打包发布
+          - 文件来源：网易有爱官网
+          - 适用于 Mac 用户
+          
+          ---
+          🤖 自动生成 | 👤 维护者：@codejorker
+        draft: false
+        prerelease: false
+        make_latest: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: 🧹 清理旧版本（保留最近 5 个）
+      uses: dev-drprasad/delete-older-releases@v0.2.1
+      with:
+        keep_latest: 5
+        delete_tags: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: ✅ 完成通知
+      shell: bash
+      run: |
+        echo "======================================"
+        echo "✅ 有爱插件打包完成！"
+        echo "======================================"
+        echo ""
+        echo "📦 版本号：${{ steps.get_info.outputs.version }}"
+        echo "📁 输出目录：${{ env.OUTPUT_DIR }}"
+        echo ""
+        echo "📤 已发布到 GitHub Releases"
+        echo "🔗 查看：https://github.com/codejorker/youai_updater/releases"
+        echo ""
+        echo "======================================"

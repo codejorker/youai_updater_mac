@@ -1,0 +1,26 @@
+{
+  "app": {
+    "version": "1.0.0",
+    "check_interval_days": 7,
+    "last_check": null,
+    "auto_check": true
+  },
+  "github": {
+    "repo": "codejorker/youai_updater",
+    "api_base": "https://api.github.com/repos"
+  },
+  "plugin": {
+    "name": "youai-plugin",
+    "target_folders": ["_retail_", "_classic_"]
+  },
+  "paths": {
+    "wow_path": null,
+    "cache_dir": "~/Library/Caches/YouAiUpdater",
+    "backup_dir": "~/Library/Application Support/YouAiUpdater/Backups"
+  },
+  "features": {
+    "backup_before_update": true,
+    "sha256_verify": true,
+    "auto_restart_game": false
+  }
+}

@@ -1,0 +1,11 @@
+# 有爱插件 Mac 更新器 - Python 依赖
+
+# HTTP 请求库
+requests>=2.31.0
+
+# HTML 解析（用于版本检测）
+beautifulsoup4>=4.12.0
+lxml>=4.9.0
+
+# GUI (macOS 系统自带，可选安装)
+# tkinter 通常预装在系统 Python 中
