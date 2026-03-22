@@ -39,7 +39,7 @@ class Config:
             },
             'gitee': {
                 'enabled': True,  # 是否启用码云镜像
-                'user': 'YOUR_USERNAME',  # 需要替换为你的码云用户名
+                'user': 'codejorker',  # 码云用户名
                 'repo': 'youai_updater_mac',
                 'api_base': 'https://gitee.com/api/v5/repos'
             },

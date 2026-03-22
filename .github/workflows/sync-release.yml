@@ -1,0 +1,25 @@
+name: 🔄 同步 Release 到码云
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  sync-to-gitee:
+    runs-on: ubuntu-latest
+    steps:
+    - name: 📦 下载 Release 文件
+      env:
+        GITEE_TOKEN: ${{ secrets.GITEE_TOKEN }}
+        GITEE_USER: ${{ secrets.GITEE_USER }}
+        GITEE_REPO: ${{ secrets.GITEE_REPO }}
+      run: |
+        echo "⚠️ 此功能需要配置 Gitee Token"
+        echo "请在仓库 Settings → Secrets 中添加以下变量:"
+        echo "  GITEE_TOKEN: 你的码云 Personal Access Token"
+        echo "  GITEE_USER: 你的码云用户名"
+        echo "  GITEE_REPO: 码云仓库名"
+        exit 1
+        
+    # 实际同步逻辑需要根据 Gitee API 实现
+    # 由于 Gitee API 限制，建议使用手动同步或第三方工具

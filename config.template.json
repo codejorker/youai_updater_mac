@@ -11,7 +11,7 @@
   },
   "gitee": {
     "enabled": true,
-    "user": "YOUR_USERNAME",
+    "user": "codejorker",
     "repo": "youai_updater_mac",
     "api_base": "https://gitee.com/api/v5/repos"
   },
