@@ -34,8 +34,14 @@ class Config:
                 'auto_check': True
             },
             'github': {
-                'repo': 'codejorker/youai_updater',  # 需要替换
+                'repo': 'codejorker/youai_updater_mac',  # GitHub 仓库（用于 Actions）
                 'api_base': 'https://api.github.com/repos'
+            },
+            'gitee': {
+                'enabled': True,  # 是否启用码云镜像
+                'user': 'YOUR_USERNAME',  # 需要替换为你的码云用户名
+                'repo': 'youai_updater_mac',
+                'api_base': 'https://gitee.com/api/v5/repos'
             },
             'plugin': {
                 'name': 'youai-plugin',
@@ -110,15 +116,45 @@ class YouAiUpdater:
         self.backup_dir.mkdir(parents=True, exist_ok=True)
     
     def check_latest_version(self):
-        """从 GitHub API 获取最新版本信息"""
+        """从 GitHub 或码云 API 获取最新版本信息"""
         try:
+            # 优先使用码云（如果启用）
+            if self.config.get('gitee', 'enabled'):
+                gitee_user = self.config.get('gitee', 'user')
+                gitee_repo = self.config.get('gitee', 'repo')
+                
+                # 跳过占位符用户名
+                if gitee_user != 'YOUR_USERNAME':
+                    try:
+                        api_url = f"{self.config.get('gitee', 'api_base')}/{gitee_user}/{gitee_repo}/releases/latest"
+                        print(f"🔍 正在检查码云版本...")
+                        
+                        response = requests.get(api_url, timeout=10)
+                        response.raise_for_status()
+                        
+                        data = response.json()
+                        print(f"✅ 码云版本：{data.get('tag_name', 'N/A')}")
+                        return {
+                            'version': data.get('tag_name', ''),
+                            'name': data.get('name', ''),
+                            'url': data.get('html_url', ''),
+                            'assets': data.get('assets', []),
+                            'published_at': data.get('created_at', ''),
+                            'body': data.get('body', '')
+                        }
+                    except Exception as e:
+                        print(f"⚠️ 码云检查失败，切换到 GitHub: {e}")
+            
+            # 从 GitHub 获取
             repo = self.config.get('github', 'repo')
             api_url = f"{self.config.get('github', 'api_base')}/{repo}/releases/latest"
+            print(f"🔍 正在检查 GitHub 版本...")
             
             response = requests.get(api_url, timeout=10)
             response.raise_for_status()
             
             data = response.json()
+            print(f"✅ GitHub 版本：{data.get('tag_name', 'N/A')}")
             return {
                 'version': data.get('tag_name', ''),
                 'name': data.get('name', ''),

@@ -6,8 +6,14 @@
     "auto_check": true
   },
   "github": {
-    "repo": "codejorker/youai_updater",
+    "repo": "codejorker/youai_updater_mac",
     "api_base": "https://api.github.com/repos"
+  },
+  "gitee": {
+    "enabled": true,
+    "user": "YOUR_USERNAME",
+    "repo": "youai_updater_mac",
+    "api_base": "https://gitee.com/api/v5/repos"
   },
   "plugin": {
     "name": "youai-plugin",
